@@ -15,7 +15,7 @@ Creates one Port workflow with the `port_workflow` resource. It deliberately con
 
 ```hcl
 module "workflow" {
-  source = "github.com/port-experimental/terraform-port-workflow"
+  source = "github.com/port-experimental/terraform-port-workflow?ref=1.0.0"
 
   identifier  = "create_service"
   title       = "Create service"
@@ -64,8 +64,6 @@ module "workflow" {
   ]
 }
 ```
-
-Pin `source` to a tag with `?ref=` once the module is released.
 
 ### Nodes
 
