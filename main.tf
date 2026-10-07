@@ -34,6 +34,15 @@ resource "port_workflow" "main" {
               order_properties = try(user_inputs.value.order_properties, null)
             }
           }
+          dynamic "permissions" {
+            for_each = try(self_serve_trigger.value.permissions, null) == null ? [] : [self_serve_trigger.value.permissions]
+            content {
+              roles  = try(permissions.value.roles, null)
+              teams  = try(permissions.value.teams, null)
+              users  = try(permissions.value.users, null)
+              policy = try(permissions.value.policy, null) == null ? null : jsonencode(permissions.value.policy)
+            }
+          }
         }
       }
       dynamic "ai" {
@@ -45,6 +54,20 @@ resource "port_workflow" "main" {
           user_prompt   = try(ai.value.user_prompt, null)
           tools         = try(ai.value.tools, null)
           output_schema = try(ai.value.output_schema, null)
+          mcp_servers   = try(ai.value.mcp_servers, null)
+        }
+      }
+      dynamic "webhook" {
+        for_each = try(node.value.webhook, null) == null ? [] : [node.value.webhook]
+        content {
+          url          = try(webhook.value.url, null)
+          method       = try(webhook.value.method, null)
+          headers      = try(webhook.value.headers, null)
+          body         = try(webhook.value.body, null) == null ? null : jsonencode(webhook.value.body)
+          agent        = try(webhook.value.agent, null)
+          synchronized = try(webhook.value.synchronized, null)
+          on_timeout   = try(webhook.value.on_timeout, null)
+          on_failure   = try(webhook.value.on_failure, null)
         }
       }
       dynamic "upsert_entity" {
