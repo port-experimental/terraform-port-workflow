@@ -45,6 +45,22 @@ resource "port_workflow" "main" {
           }
         }
       }
+      dynamic "event_trigger" {
+        for_each = try(node.value.event_trigger, null) == null ? [] : [node.value.event_trigger]
+        content {
+          type                 = event_trigger.value.type
+          blueprint_identifier = try(event_trigger.value.blueprint_identifier, null)
+          property_identifier  = try(event_trigger.value.property_identifier, null)
+          published            = try(event_trigger.value.published, true)
+          dynamic "condition" {
+            for_each = try(event_trigger.value.condition, null) == null ? [] : [event_trigger.value.condition]
+            content {
+              expressions = condition.value.expressions
+              combinator  = try(condition.value.combinator, "and")
+            }
+          }
+        }
+      }
       dynamic "ai" {
         for_each = try(node.value.ai, null) == null ? [] : [node.value.ai]
         content {
@@ -68,6 +84,43 @@ resource "port_workflow" "main" {
           synchronized = try(webhook.value.synchronized, null)
           on_timeout   = try(webhook.value.on_timeout, null)
           on_failure   = try(webhook.value.on_failure, null)
+        }
+      }
+      dynamic "integration_action" {
+        for_each = try(node.value.integration_action, null) == null ? [] : [node.value.integration_action]
+        content {
+          installation_id             = integration_action.value.installation_id
+          integration_provider        = integration_action.value.integration_provider
+          integration_invocation_type = integration_action.value.integration_invocation_type
+          execution_properties        = try(integration_action.value.execution_properties, null) == null ? null : jsonencode(integration_action.value.execution_properties)
+          on_failure                  = try(integration_action.value.on_failure, null)
+        }
+      }
+      dynamic "condition" {
+        for_each = try(node.value.condition, null) == null ? [] : [node.value.condition]
+        content {
+          dynamic "outlets" {
+            for_each = condition.value.outlets
+            content {
+              identifier = outlets.value.identifier
+              title      = try(outlets.value.title, null)
+              expression = outlets.value.expression
+              dynamic "status_label" {
+                for_each = try(outlets.value.status_label, null) == null ? [] : [outlets.value.status_label]
+                content {
+                  text    = try(status_label.value.text, null)
+                  variant = try(status_label.value.variant, null)
+                }
+              }
+              dynamic "workflow_status_label" {
+                for_each = try(outlets.value.workflow_status_label, null) == null ? [] : [outlets.value.workflow_status_label]
+                content {
+                  text    = try(workflow_status_label.value.text, null)
+                  variant = try(workflow_status_label.value.variant, null)
+                }
+              }
+            }
+          }
         }
       }
       dynamic "upsert_entity" {
