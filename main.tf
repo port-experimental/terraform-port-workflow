@@ -76,14 +76,15 @@ resource "port_workflow" "main" {
       dynamic "webhook" {
         for_each = try(node.value.webhook, null) == null ? [] : [node.value.webhook]
         content {
-          url          = try(webhook.value.url, null)
-          method       = try(webhook.value.method, null)
-          headers      = try(webhook.value.headers, null)
-          body         = try(webhook.value.body, null) == null ? null : jsonencode(webhook.value.body)
-          agent        = try(webhook.value.agent, null)
-          synchronized = try(webhook.value.synchronized, null)
-          on_timeout   = try(webhook.value.on_timeout, null)
-          on_failure   = try(webhook.value.on_failure, null)
+          url             = try(webhook.value.url, null)
+          method          = try(webhook.value.method, null)
+          headers         = try(webhook.value.headers, null)
+          body            = try(webhook.value.body, null) == null ? null : jsonencode(webhook.value.body)
+          agent           = try(webhook.value.agent, null)
+          synchronized    = try(webhook.value.synchronized, null)
+          on_timeout      = try(webhook.value.on_timeout, null)
+          on_failure      = try(webhook.value.on_failure, null)
+          timeout_minutes = try(webhook.value.timeout_minutes, null)
         }
       }
       dynamic "integration_action" {
@@ -94,6 +95,7 @@ resource "port_workflow" "main" {
           integration_invocation_type = integration_action.value.integration_invocation_type
           execution_properties        = try(integration_action.value.execution_properties, null) == null ? null : jsonencode(integration_action.value.execution_properties)
           on_failure                  = try(integration_action.value.on_failure, null)
+          timeout_minutes             = try(integration_action.value.timeout_minutes, null)
         }
       }
       dynamic "condition" {

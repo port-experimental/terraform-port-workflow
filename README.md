@@ -8,14 +8,14 @@ Creates one Port workflow with the `port_workflow` resource. It deliberately con
 ## Requirements
 
 - Terraform >= 1.1
-- `port-labs/port-labs` provider >= 2.25.0
+- `port-labs/port-labs` provider >= 2.34.4 (first release with node `timeout_minutes`)
 - A root module that configures the Port provider with pipeline environment variables `PORT_CLIENT_ID` and `PORT_CLIENT_SECRET`
 
 ## Usage
 
 ```hcl
 module "workflow" {
-  source = "github.com/port-experimental/terraform-port-workflow?ref=1.0.0"
+  source = "github.com/port-experimental/terraform-port-workflow?ref=1.0.3"
 
   identifier  = "create_service"
   title       = "Create service"
@@ -77,8 +77,8 @@ Triggers:
 Actions:
 
 - `ai` — An AI step. Accepts `provider`, `model`, `system_prompt`, `user_prompt`, `tools`, `output_schema` and `mcp_servers`. Set `output_schema` when a later node needs structured fields from the response.
-- `webhook` — Calls a URL. Accepts `url`, `method`, `headers`, `body`, `agent`, `synchronized`, `on_timeout` and `on_failure`. Pass `body` as an HCL object, because the module JSON-encodes it.
-- `integration_action` — Runs an action through an installed Port integration, such as a GitHub workflow dispatch. `installation_id`, `integration_provider` and `integration_invocation_type` are required. Pass `execution_properties` as an HCL object, because the module JSON-encodes it; its fields depend on the provider (for `github-ocean`: `org`, `repo`, `workflow`, `workflowInputs` and `reportWorkflowStatus`). Set `on_failure = "continue"` so a failed dispatch doesn't stop the run.
+- `webhook` — Calls a URL. Accepts `url`, `method`, `headers`, `body`, `agent`, `synchronized`, `on_timeout`, `on_failure` and `timeout_minutes`. Pass `body` as an HCL object, because the module JSON-encodes it.
+- `integration_action` — Runs an action through an installed Port integration, such as a GitHub workflow dispatch. `installation_id`, `integration_provider` and `integration_invocation_type` are required. Pass `execution_properties` as an HCL object, because the module JSON-encodes it; its fields depend on the provider (for `github-ocean`: `org`, `repo`, `workflow`, `workflowInputs` and `reportWorkflowStatus`). Set `on_failure = "continue"` so a failed dispatch doesn't stop the run. Set `timeout_minutes` for long-running actions such as Cursor agents; Port's default applies when it is omitted.
 - `upsert_entity` — Creates or updates an entity on `blueprint_identifier`. `on_failure` defaults to `"terminate"`, which stops the whole run; set `"continue"` to carry on. Pass `mapping.properties` and `mapping.relations` as HCL objects, because the module JSON-encodes them for you.
 
 Flow control:
