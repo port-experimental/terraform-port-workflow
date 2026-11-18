@@ -101,6 +101,7 @@ resource "port_workflow" "main" {
       dynamic "condition" {
         for_each = try(node.value.condition, null) == null ? [] : [node.value.condition]
         content {
+          timeout_minutes = try(condition.value.timeout_minutes, null)
           dynamic "outlets" {
             for_each = condition.value.outlets
             content {
@@ -125,11 +126,106 @@ resource "port_workflow" "main" {
           }
         }
       }
+      dynamic "schedule_trigger" {
+        for_each = try(node.value.schedule_trigger, null) == null ? [] : [node.value.schedule_trigger]
+        content {
+          cron      = schedule_trigger.value.cron
+          published = try(schedule_trigger.value.published, true)
+        }
+      }
+      dynamic "workflow_trigger" {
+        for_each = try(node.value.workflow_trigger, null) == null ? [] : [node.value.workflow_trigger]
+        content {
+          published = try(workflow_trigger.value.published, true)
+        }
+      }
+      dynamic "execute_workflow" {
+        for_each = try(node.value.execute_workflow, null) == null ? [] : [node.value.execute_workflow]
+        content {
+          workflow_identifier = execute_workflow.value.workflow_identifier
+          trigger_identifier  = execute_workflow.value.trigger_identifier
+          input               = try(execute_workflow.value.input, null) == null ? null : jsonencode(execute_workflow.value.input)
+          wait                = try(execute_workflow.value.wait, null)
+          on_failure          = try(execute_workflow.value.on_failure, null)
+          timeout_minutes     = try(execute_workflow.value.timeout_minutes, null)
+        }
+      }
+      dynamic "input" {
+        for_each = try(node.value.input, null) == null ? [] : [node.value.input]
+        content {
+          description     = try(input.value.description, null)
+          timeout_minutes = try(input.value.timeout_minutes, null)
+          dynamic "responders" {
+            for_each = try(input.value.responders, null) == null ? [] : [input.value.responders]
+            content {
+              roles       = try(responders.value.roles, null)
+              teams       = try(responders.value.teams, null)
+              users       = try(responders.value.users, null)
+              users_query = try(responders.value.users_query, null) == null ? null : jsonencode(responders.value.users_query)
+            }
+          }
+          dynamic "notifications" {
+            for_each = try(input.value.notifications, [])
+            content {
+              target  = notifications.value.target
+              url     = try(notifications.value.url, null)
+              method  = try(notifications.value.method, null)
+              agent   = try(notifications.value.agent, null)
+              headers = try(notifications.value.headers, null)
+              body    = try(notifications.value.body, null) == null ? null : jsonencode(notifications.value.body)
+              dynamic "fields" {
+                for_each = try(notifications.value.fields, [])
+                content {
+                  label = fields.value.label
+                  value = fields.value.value
+                }
+              }
+            }
+          }
+          dynamic "user_inputs" {
+            for_each = try(input.value.user_inputs, null) == null ? [] : [input.value.user_inputs]
+            content {
+              buttons          = try(user_inputs.value.buttons, null)
+              order_properties = try(user_inputs.value.order_properties, null)
+              user_properties = try(user_inputs.value.user_properties, null) == null ? null : {
+                string_props  = try(user_inputs.value.user_properties.string_props, null)
+                number_props  = try(user_inputs.value.user_properties.number_props, null)
+                boolean_props = try(user_inputs.value.user_properties.boolean_props, null)
+                object_props  = try(user_inputs.value.user_properties.object_props, null)
+                array_props   = try(user_inputs.value.user_properties.array_props, null)
+              }
+            }
+          }
+          dynamic "outlets" {
+            for_each = input.value.outlets
+            content {
+              identifier        = outlets.value.identifier
+              title             = try(outlets.value.title, null)
+              num_of_responders = outlets.value.num_of_responders
+              dynamic "status_label" {
+                for_each = try(outlets.value.status_label, null) == null ? [] : [outlets.value.status_label]
+                content {
+                  text    = try(status_label.value.text, null)
+                  variant = try(status_label.value.variant, null)
+                }
+              }
+              dynamic "workflow_status_label" {
+                for_each = try(outlets.value.workflow_status_label, null) == null ? [] : [outlets.value.workflow_status_label]
+                content {
+                  text    = try(workflow_status_label.value.text, null)
+                  variant = try(workflow_status_label.value.variant, null)
+                }
+              }
+            }
+          }
+        }
+      }
       dynamic "upsert_entity" {
         for_each = try(node.value.upsert_entity, null) == null ? [] : [node.value.upsert_entity]
         content {
           blueprint_identifier = upsert_entity.value.blueprint_identifier
           on_failure           = try(upsert_entity.value.on_failure, "terminate")
+          timeout_minutes      = try(upsert_entity.value.timeout_minutes, null)
           dynamic "mapping" {
             for_each = try(upsert_entity.value.mapping, null) == null ? [] : [upsert_entity.value.mapping]
             content {

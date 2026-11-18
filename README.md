@@ -15,7 +15,7 @@ Creates one Port workflow with the `port_workflow` resource. It deliberately con
 
 ```hcl
 module "workflow" {
-  source = "github.com/port-experimental/terraform-port-workflow?ref=1.0.3"
+  source = "github.com/port-experimental/terraform-port-workflow?ref=1.0.4"
 
   identifier  = "create_service"
   title       = "Create service"
@@ -67,7 +67,7 @@ module "workflow" {
 
 ### Nodes
 
-Each entry in `nodes` needs an `identifier` and exactly one of the node blocks below. Other Port node types, such as `INPUT`, `AI_AGENT`, `KAFKA` and `SCHEDULE_TRIGGER`, are not supported yet.
+Each entry in `nodes` needs an `identifier` and exactly one of the node blocks below. Other Port node types, such as `AI_AGENT` and `KAFKA`, are not supported yet. Requires port-labs provider `>= 2.36.0` (for `workflow_trigger` and `execute_workflow`).
 
 Triggers:
 
@@ -79,6 +79,10 @@ Actions:
 - `ai` — An AI step. Accepts `provider`, `model`, `system_prompt`, `user_prompt`, `tools`, `output_schema` and `mcp_servers`. Set `output_schema` when a later node needs structured fields from the response.
 - `webhook` — Calls a URL. Accepts `url`, `method`, `headers`, `body`, `agent`, `synchronized`, `on_timeout`, `on_failure` and `timeout_minutes`. Pass `body` as an HCL object, because the module JSON-encodes it.
 - `integration_action` — Runs an action through an installed Port integration, such as a GitHub workflow dispatch. `installation_id`, `integration_provider` and `integration_invocation_type` are required. Pass `execution_properties` as an HCL object, because the module JSON-encodes it; its fields depend on the provider (for `github-ocean`: `org`, `repo`, `workflow`, `workflowInputs` and `reportWorkflowStatus`). Set `on_failure = "continue"` so a failed dispatch doesn't stop the run. Set `timeout_minutes` for long-running actions such as Cursor agents; Port's default applies when it is omitted.
+- `schedule_trigger` — Runs on a `cron` schedule (UTC). `published` defaults to `true`.
+- `workflow_trigger` — Lets another workflow start this one through an `execute_workflow` node; the caller's `input` becomes this node's output. `published` defaults to `true`.
+- `execute_workflow` — Starts another workflow through its `workflow_trigger`. Set `workflow_identifier`, `trigger_identifier` and `input` (an HCL object the module JSON-encodes). `wait` controls whether the run waits for the child; `on_failure` is only valid when `wait = true`.
+- `input` — Pauses the run for a human. Set `outlets` (each with `identifier`, `num_of_responders`, optional `title` and labels), `responders` (`roles`, `teams`, `users`), `user_inputs.buttons`, optional `notifications` (`target` = `email`, `slack` or `webhook`, with `fields`) and `description`. Every outlet must be connected, or the run fails when it is chosen.
 - `upsert_entity` — Creates or updates an entity on `blueprint_identifier`. `on_failure` defaults to `"terminate"`, which stops the whole run; set `"continue"` to carry on. Pass `mapping.properties` and `mapping.relations` as HCL objects, because the module JSON-encodes them for you.
 
 Flow control:
