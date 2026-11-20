@@ -5,17 +5,40 @@ Creates one Port workflow with the `port_workflow` resource. It deliberately con
 > [!IMPORTANT]
 > **Permissions** A self-service trigger without `permissions` can only be run by Port Admins. Set `permissions` on the trigger if non-admins need to run the workflow.
 
-## Requirements
+## Resources Created
 
-- Terraform >= 1.1
-- `port-labs/port-labs` provider >= 2.34.4 (first release with node `timeout_minutes`)
-- A root module that configures the Port provider with pipeline environment variables `PORT_CLIENT_ID` and `PORT_CLIENT_SECRET`
+- `port_workflow`
+
+## Prerequisites
+
+```
+Terraform >= 1.1.0
+Port Provider (port-labs/port-labs) >= 2.36.0, < 3.0.0
+```
+
+Provider `2.36.0` is the first release with `workflow_trigger` and `execute_workflow` nodes; `timeout_minutes` on nodes needs `>= 2.34.4`. The calling root module configures the Port provider from `PORT_CLIENT_ID` and `PORT_CLIENT_SECRET`.
+
+## Installing
+
+```hcl
+module "workflow" {
+  source = "github.com/port-experimental/terraform-port-workflow?ref=1.0.5"
+
+  identifier = "hello_world"
+  nodes = [
+    {
+      identifier         = "trigger"
+      self_serve_trigger = {}
+    }
+  ]
+}
+```
 
 ## Usage
 
 ```hcl
 module "workflow" {
-  source = "github.com/port-experimental/terraform-port-workflow?ref=1.0.4"
+  source = "github.com/port-experimental/terraform-port-workflow?ref=1.0.5"
 
   identifier  = "create_service"
   title       = "Create service"
@@ -149,17 +172,29 @@ Each entry in `connections` is a directed edge with a required `source_identifie
 
 ## Inputs
 
-- `identifier` — Unique identifier for the workflow. Required.
-- `title` — Display name of the workflow. Optional; defaults to `null`.
-- `description` — Description of the workflow. Optional; defaults to `null`.
-- `icon` — Port icon identifier. Optional; defaults to `null`.
-- `category` — Category that groups the workflow in the UI, up to 40 characters. Optional; defaults to `null`.
-- `allow_anyone_to_view_runs` — Whether all users can view workflow runs. Optional; defaults to `true`.
-- `nodes` — Workflow node definitions. Required; must contain at least one node.
-- `connections` — Directed connections between nodes. Optional; defaults to `[]`.
+| Name | Description | Type | Default | Required |
+|---|---|---|---|---|
+| `identifier` | Unique identifier for the Port workflow. | `string` | n/a | yes |
+| `title` | Display name of the Port workflow. | `string` | `null` | no |
+| `description` | Optional description of the Port workflow. | `string` | `null` | no |
+| `icon` | Optional Port icon identifier for the workflow. | `string` | `null` | no |
+| `category` | Optional workflow category, up to 40 characters. | `string` | `null` | no |
+| `allow_anyone_to_view_runs` | Whether all users can view workflow runs. | `bool` | `true` | no |
+| `nodes` | Workflow node definitions. | `any` | n/a | yes |
+| `connections` | Directed connections between workflow nodes. | `any` | `[]` | no |
 
 ## Outputs
 
-- `id` — Port's identifier for the workflow resource.
-- `identifier` — Configured workflow identifier.
-- `title` — Configured workflow title.
+| Name | Description |
+|---|---|
+| `id` | Port workflow identifier. |
+| `identifier` | Configured workflow identifier. |
+| `title` | Configured workflow title. |
+
+## Standards notes
+
+Deliberate departures from the Terraform module standard, so reviewers don't re-raise them:
+
+- **`any`-typed `nodes` and `connections`.** Each node type maps to a provider block with its own nested schema; the module reads every field with `try()` and the provider validates the result. A typed `object()` would duplicate that schema and silently drop attributes it does not declare. When a new node field is needed, add it to `main.tf` and release a new version — callers' extra fields are otherwise ignored.
+- **No `data.tf`.** The module has no data sources or locals, and the standard does not allow empty files.
+- **No naming or tag variables** (`project`, `client`, `env`, `name`, `managedby`, `region`, `category`, `component_type`, `common_tags`, `extra_tags`). Port workflows are not AWS resources and carry no tags; the workflow `identifier` is the name.
